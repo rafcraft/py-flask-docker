@@ -1,0 +1,24 @@
+FROM python:3.9-slim
+LABEL org.opencontainers.image.authors="github.com/rafcraft"
+
+WORKDIR /app
+
+RUN useradd -m appuser
+
+COPY requirements.txt /app/
+COPY app /app/
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    python3-dev \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir -r requirements.txt \
+    && apt-get autoremove -y
+
+USER appuser
+
+EXPOSE 5000
+
+CMD ["gunicorn", "-b", "0.0.0.0:5000", "app:app"]

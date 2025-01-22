@@ -1,0 +1,10 @@
+FROM postgres:14
+LABEL org.opencontainers.image.authors="github.com/rafcraft"
+
+COPY chatanon.sql /docker-entrypoint-initdb.d/
+
+ENV POSTGRES_DB=chatanon
+ENV POSTGRES_USER=postgres
+ENV POSTGRES_PASSWORD=iDaid0Ca
+
+CMD ["postgres"]

@@ -10,7 +10,6 @@ from sqlalchemy import TIMESTAMP
 from dotenv import load_dotenv
 import os
 
-
 load_dotenv()
 
 db_user = os.getenv('DB_USER')
@@ -20,7 +19,7 @@ db_name = os.getenv('DB_NAME')
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://{db_user}:{db_password}@{db_host}/{db_name}"
+app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 bootstrap = Bootstrap(app)
@@ -91,6 +90,3 @@ def handle_disconnect():
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db.session.remove()
-
-if __name__ == '__main__':
-    socketio.run(app)

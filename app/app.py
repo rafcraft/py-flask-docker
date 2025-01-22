@@ -1,10 +1,12 @@
 from flask import Flask, render_template, flash, request
+from flask_migrate import Migrate
 from flask_bootstrap import Bootstrap
+from flask_socketio import SocketIO, emit
+from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField
 from wtforms.validators import DataRequired
-from flask_socketio import SocketIO, emit
-from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import TIMESTAMP
 from dotenv import load_dotenv
 import os
 
@@ -24,39 +26,36 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 bootstrap = Bootstrap(app)
 socketio = SocketIO(app)
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
-# Modele
 class Form(db.Model):
     __tablename__ = 'form'
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(30), nullable=False)
-    name = db.Column(db.String(30), nullable=False)
-    last_name = db.Column(db.String(30), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    name = db.Column(db.String(50), nullable=False)
+    last_name = db.Column(db.String(50), nullable=False)
     message = db.Column(db.Text, nullable=False)
 
 class Message(db.Model):
     __tablename__ = 'messages'
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(30), nullable=False)
+    username = db.Column(db.String(50), nullable=False)
     message = db.Column(db.Text, nullable=False)
-    data = db.Column(db.TIMESTAMP, server_default=db.func.now())
+    data = db.Column(TIMESTAMP(timezone=True), server_default=db.func.now())
 
-# Formularz
 class MyForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired()])
     name = StringField('Imię', validators=[DataRequired()])
     last_name = StringField('Nazwisko', validators=[DataRequired()])
     message = TextAreaField('Wiadomość', validators=[DataRequired()])
 
-# Trasy
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/chat')
 def chat():
-    messages = Message.query.order_by(Message.id.desc()).limit(20).all()
-    messages.reverse()
+    messages = Message.query.order_by(Message.id.asc()).limit(20).all()
     return render_template('chat.html', messages=messages)
 
 @app.route('/form', methods=['GET', 'POST'])
@@ -74,7 +73,6 @@ def form():
         flash('Dane zostały zapisane pomyślnie!', 'success')
     return render_template('form.html', form=form1)
 
-# Socket.IO
 @socketio.on('connect')
 def handle_connect():
     print('Połączono z klientem:', request.sid)
@@ -93,3 +91,6 @@ def handle_disconnect():
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db.session.remove()
+
+if __name__ == '__main__':
+    socketio.run(app)
